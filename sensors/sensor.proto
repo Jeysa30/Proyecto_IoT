@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package sensor;
+
+// Servicio para los sensores
+service SensorService {
+  // Enviar datos del sensor
+  rpc SendData (SensorData) returns (DataResponse) {}
+}
+
+// Mensaje que contiene los datos del sensor
+message SensorData {
+  string sensor_type = 1;  // Tipo de sensor (temperatura, ritmo_cardiaco, presion_arterial)
+  string data = 2;
+}
+
+// Respuesta del servidor
+message DataResponse {
+  string status = 1;
+}
