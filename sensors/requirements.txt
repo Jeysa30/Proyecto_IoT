@@ -1,0 +1,9 @@
+# Dependencias comunes
+grpcio==1.54.0
+grpcio-tools==1.54.0
+protobuf==4.22.3
+requests==2.31.0
+websockets==11.0.3
+
+# Para logging y formateo
+python-json-logger==2.0.7
