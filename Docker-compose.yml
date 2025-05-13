@@ -38,3 +38,34 @@ services:
     container_name: sensor-websocket
 
     restart: always
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=iot_user
+      - POSTGRES_PASSWORD=iot_password
+      - POSTGRES_DB=health_data
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  mqtt-subscriber:
+    build:
+      context: ./mqtt_subscriber
+    depends_on:
+      - mosquitto
+      - postgres
+    environment:
+      - MQTT_BROKER=mosquitto
+      - POSTGRES_HOST=postgres
+
+volumes:
+  postgres_data:
