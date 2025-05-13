@@ -8,6 +8,8 @@ services:
     container_name: iot-gateway
     ports:
       - "50051:50051"
+      - "5000:5000"
+      - "8766:8765"
     restart: always
 
   sensor-grpc:
@@ -30,9 +32,9 @@ services:
       - GATEWAY_HOST=iot-gateway
     restart: always
 
-  sensor-heartbeat:
+  sensor-websocket:
     build:
       context: ./sensors/sensor_3
-    container_name: sensor-heartbeat
+    container_name: sensor-websocket
 
     restart: always
