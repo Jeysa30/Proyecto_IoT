@@ -2,12 +2,11 @@ from concurrent import futures
 import grpc
 import sensor_pb2
 import sensor_pb2_grpc
-import mqtt_publisher
 
 class TemperatureSensorServicer(sensor_pb2_grpc.TemperatureSensorServicer):
     def SendTemperature(self, request, context):
         #print(f"[gRPC] Recibido: Sensor {request.sensor_id}, Temp: {request.temperature}°C")
-        print(f"[gRPC] Received from {request.id}: {request.temperature}°C at {request.timestamp}", flush=True)
+        print(f"[gRPC] Received from {request.sensor_id}: {request.temperature}°C at {request.timestamp}", flush=True)
         return sensor_pb2.Acknowledgement(message="Temperatura recibida correctamente.")
 
 def serve():

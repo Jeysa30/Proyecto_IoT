@@ -21,7 +21,7 @@ def run():
         )
 
         ack = stub.SendTemperature(temp_data)
-        print(f"Enviado: {temp_data.temperature}°C | Respuesta: {ack.message}")
+        print(f"Enviado: {temp_data.temperature}°C | Respuesta: {ack.message}", flush=True)
         time.sleep(5)
 
 if __name__ == "__main__":

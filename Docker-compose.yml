@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+
+  iot-gateway:
+    build:
+      context: ./IoT_gateway
+    container_name: iot-gateway
+    ports:
+      - "50051:50051"  # Prueba
+    restart: always
+
   sensor-grpc:
     build:
       context: ./sensors/sensor_1
@@ -9,12 +18,4 @@ services:
       - iot-gateway
     environment:
       - GATEWAY_HOST=iot-gateway
-    restart: always
-
-  iot-gateway:
-    build:
-      context: ./IoT_gateway
-    container_name: iot-gateway
-    ports:
-      - "50051:50051"  # Prueba
     restart: always
