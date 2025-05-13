@@ -2,15 +2,18 @@ from concurrent import futures
 import grpc
 import sensor_pb2
 import sensor_pb2_grpc
+from flask import Flask, request, jsonify
 import threading
 import asyncio
 import websockets
 import json
 
-# --- gRPC Sensor ---
+### GRPC ###
+
 class TemperatureSensorServicer(sensor_pb2_grpc.TemperatureSensorServicer):
     def SendTemperature(self, request, context):
-        print(f"[gRPC] Recibido: Sensor {request.sensor_id}, Temp: {request.temperature}°C", flush=True)
+        #print(f"[gRPC] Recibido: Sensor {request.sensor_id}, Temp: {request.temperature}°C")
+        print(f"[gRPC] Received from {request.sensor_id}: {request.temperature}°C at {request.timestamp}", flush=True)
         return sensor_pb2.Acknowledgement(message="Temperatura recibida correctamente.")
 
 def serve_grpc():
@@ -20,6 +23,28 @@ def serve_grpc():
     print("Servidor gRPC en puerto 50051...")
     server.start()
     server.wait_for_termination()
+
+### REST ### 
+
+# Configuración del servidor REST
+rest_app = Flask(__name__)
+
+@rest_app.route('/blood-pressure', methods=['POST'])
+
+def handle_blood_pressure():
+    data = request.json
+    print(f"[REST] Received blood pressure data: {data}", flush=True)
+    return jsonify({"status": "success", "message": "Blood pressure data received"})
+
+
+@rest_app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy"})
+
+def serve_rest():
+    rest_app.run(host='0.0.0.0', port=5000)
+
+### WEBSOCKET ###
 
 # --- Websocket Sensor ---
 async def websocket_server(websocket, path):
@@ -35,6 +60,19 @@ def serve_websocket():
 
     asyncio.run(start_server())
 
+
 if __name__ == '__main__':
-    threading.Thread(target=serve_grpc, daemon=True).start()
-    serve_websocket()
+    # Iniciar servidores en hilos separados
+    import threading
+    
+    grpc_thread = threading.Thread(target=serve_grpc, daemon=True)
+    rest_thread = threading.Thread(target=serve_rest, daemon=True)
+    websocket_thread = threading.Thread(target=serve_websocket, daemon=True)
+    
+    grpc_thread.start()
+    rest_thread.start()
+    websocket_thread.start()
+    
+    grpc_thread.join()
+    rest_thread.join()
+    websocket_thread.join()

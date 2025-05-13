@@ -7,7 +7,7 @@ services:
       context: ./IoT_gateway
     container_name: iot-gateway
     ports:
-      - "50051:50051" 
+      - "50051:50051"
     restart: always
 
   sensor-grpc:
@@ -19,9 +19,20 @@ services:
     environment:
       - GATEWAY_HOST=iot-gateway
     restart: always
-  
+
+  sensor-rest:
+    build:
+      context: ./sensors/sensor_2
+    container_name: sensor-rest
+    depends_on:
+      - iot-gateway
+    environment:
+      - GATEWAY_HOST=iot-gateway
+    restart: always
+
   sensor-heartbeat:
     build:
       context: ./sensors/sensor_3
     container_name: sensor-heartbeat
+
     restart: always
