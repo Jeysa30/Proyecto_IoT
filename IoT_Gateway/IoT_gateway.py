@@ -81,7 +81,7 @@ sensor_data = {
 
 # --- Cliente MQTT ---
 mqtt_client = mqtt.Client()
-mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 180)
 
 # MQTT - Publicador de datos agrupados
 def publish_to_mqtt():
@@ -92,15 +92,27 @@ def publish_to_mqtt():
         if not (sensor_data["temperature"] or sensor_data["blood_pressure"] or sensor_data["blood_pressure"]):
             continue  # No hay datos que publicar aún
 
+        avg_temp = (
+            sum(sensor_data["temperature"]) / len(sensor_data["temperature"])
+            if sensor_data["temperature"] else 0
+        )
+        last_bp = (
+            sensor_data["blood_pressure"][-1]
+            if sensor_data["blood_pressure"] else {"systolic": None, "diastolic": None, "heart_rate": None}
+        )
+
         payload = {
-            "temperature": sensor_data["temperature"][-1] if sensor_data["temperature"] else 0,
-            "blood_pressure": sensor_data["blood_pressure"][-1] if sensor_data["blood_pressure"] else None,
-            "heart_rate": sensor_data["heart_rate"][-1] if sensor_data["heart_rate"] else None,
+            "avg_temperature": round(avg_temp, 2),
+            "last_blood_pressure": {
+                "systolic": last_bp.get("systolic"),
+                "diastolic": last_bp.get("diastolic"),
+                "heart_rate": last_bp.get("heart_rate")
+            },
             "timestamp": datetime.datetime.now().isoformat()
         }
 
         mqtt_client.publish(MQTT_TOPIC, json.dumps(payload))
-        print(f"[MQTT] Published: {payload}", flush=True)
+        print(f"[MQTT] Publishedd: {payload}", flush=True)
 
         # Limpiar datos acumulados después de publicar
         sensor_data["temperature"].clear()

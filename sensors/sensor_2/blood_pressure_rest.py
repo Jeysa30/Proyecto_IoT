@@ -17,7 +17,6 @@ def generate_blood_pressure():
     diastolic = random.randint(60, 120)  # Presión diastólica (mmHg)
     heart_rate = random.randint(60, 100)  # Frecuencia cardíaca (bpm)
     return {
-        "sensor_id": SENSOR_ID,
         "systolic": systolic,
         "diastolic": diastolic,
         "heart_rate": heart_rate,

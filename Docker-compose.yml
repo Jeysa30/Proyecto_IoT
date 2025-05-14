@@ -11,6 +11,8 @@ services:
       - "5000:5000"
       - "8766:8765"
     restart: always
+    networks:
+      - iot_net
 
   sensor-grpc:
     build:
@@ -21,6 +23,8 @@ services:
     environment:
       - GATEWAY_HOST=iot-gateway
     restart: always
+    networks:
+      - iot_net
 
   sensor-rest:
     build:
@@ -31,6 +35,8 @@ services:
     environment:
       - GATEWAY_HOST=iot-gateway
     restart: always
+    networks:
+      - iot_net
 
   sensor-websocket:
     build:
@@ -38,24 +44,34 @@ services:
     container_name: sensor-websocket
 
     restart: always
+    networks:
+      - iot_net
 
   mosquitto:
-    image: eclipse-mosquitto:latest
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
     ports:
       - "1883:1883"
     volumes:
-      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/data:/mosquitto/data 
+      - ./mosquitto/log:/mosquitto/log
+    networks:
+      - iot_net
 
   postgres:
-    image: postgres:13
+    image: postgres:15
+    container_name: postgres
     environment:
       - POSTGRES_USER=iot_user
       - POSTGRES_PASSWORD=iot_password
       - POSTGRES_DB=health_data
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
+    networks:
+      - iot_net
 
   mqtt-subscriber:
     build:
@@ -66,6 +82,12 @@ services:
     environment:
       - MQTT_BROKER=mosquitto
       - POSTGRES_HOST=postgres
+      - POSTGRES_DB=health_data
+      - POSTGRES_USER=iot_user
+      - POSTGRES_PASSWORD=iot_password
+    networks:
+      - iot_net
 
-volumes:
-  postgres_data:
+networks:
+  iot_net:
+    driver: bridge
