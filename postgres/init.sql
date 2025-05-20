@@ -1,4 +1,5 @@
 CREATE TABLE IF NOT EXISTS sensor_data (
+    id SERIAL PRIMARY KEY,
     temperature FLOAT,
     systolic INT,
     diastolic INT,

@@ -7,17 +7,13 @@ import os
 MQTT_TOPIC = "iot/health_data"
 
 BROKER = os.getenv("MQTT_BROKER")
-DB_HOST = os.getenv('POSTGRES_HOST', 'postgres')
-DB_NAME = os.getenv('DB_NAME', 'health_data')
-DB_USER = os.getenv('DB_USER', 'iot_user')
-DB_PASS = os.getenv('DB_PASS', 'iot_password')
 
-#POSTGRES_CONFIG = {
-#    "host": os.getenv("POSTGRES_HOST", "postgres"),
-#    "database": "health_data",
-#    "user": "iot_user",
-#    "password": "iot_password"
-#}
+POSTGRES_CONFIG = {
+    "host": os.getenv("POSTGRES_HOST", "postgres"),
+    "database": "health_data",
+    "user": "iot_user",
+    "password": "iot_password"
+}
 
 def on_message(client, userdata, msg):
     print(f"Mensaje recibido bruto: {msg.payload}", flush=True)  # Nuevo log
@@ -26,13 +22,8 @@ def on_message(client, userdata, msg):
         data = json.loads(msg.payload.decode())
         
         # Conexión a PostgreSQL
-        conn = psycopg2.connect(
-            host=DB_HOST,
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS
-        )
-        #conn = psycopg2.connect(**POSTGRES_CONFIG)
+
+        conn = psycopg2.connect(**POSTGRES_CONFIG)
         cursor = conn.cursor()
         print(f"Decodificado: {data}", flush=True)
         
@@ -49,7 +40,7 @@ def on_message(client, userdata, msg):
                 diastolic, 
                 heart_rate, 
                 timestamp
-            ) VALUES (%s, %s, %s, %s, to_timestamp(%s, 'YYYY-MM-DD\"T\"HH24:MI:SS.US'))
+            ) VALUES (%s, %s, %s, %s, %s)
             """, (
                 temperature, 
                 systolic, 
@@ -79,5 +70,4 @@ print(f"[MQTT] Conectando a broker {BROKER}...", flush=True)
 client.connect(os.getenv("MQTT_BROKER"), 1883, 180)
 client.subscribe(MQTT_TOPIC)
 print("[MQTT] Suscrito a 'sensor/data'", flush=True)
-print("Subscriptor MQTT -> PostgreSQL iniciado...")
 client.loop_forever()
