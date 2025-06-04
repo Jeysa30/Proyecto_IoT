@@ -68,7 +68,7 @@ Este proyecto implementa un sistema de IoT para el sector de salud que recopila 
 
         - iot-gateway
         - sensor-websocket
-        - proyecto_iot-mosquitto-1
+        - mosquitto
         - proyecto_iot-postgres-1
         - sensor-grpc
         - sensor-rest
