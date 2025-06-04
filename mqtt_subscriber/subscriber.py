@@ -4,7 +4,7 @@ import json
 import os
 
 # Configuración
-MQTT_TOPIC = "iot/health_data/sensor_1"
+MQTT_TOPIC = "iot/health_data/sensor_2"
 
 BROKER = os.getenv("MQTT_BROKER")
 

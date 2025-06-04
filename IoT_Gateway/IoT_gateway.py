@@ -23,7 +23,7 @@ def serve_grpc():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     sensor_pb2_grpc.add_TemperatureSensorServicer_to_server(TemperatureSensorServicer(), server)
     server.add_insecure_port('[::]:50051')
-    print("[gRPC] Servidor iniciado en puerto 50051")
+    print("[RPC] Servidor iniciado en puerto 50051")
     server.start()
     server.wait_for_termination()
 
@@ -39,7 +39,7 @@ def handle_blood_pressure():
     print(f"[REST] Presion arterial recibida: {data}", flush=True)
     #sensor_data["blood_pressure"].append(data)
     publish_to_mqtt("blood_pressure", data['sensor_id'], data['blood_pressure'], data['timestamp'], "iot/health_data/sensor_2")
-    return jsonify({"status": "success", "message": "Presion arterial recibida correctamente"})
+    return jsonify({"status": "success", "message": "Blood pressure data received"})
 
 
 def serve_rest():
@@ -67,7 +67,6 @@ def serve_websocket():
 # --- Configuración MQTT ---
 MQTT_BROKER = "mosquitto"  # Nombre del servicio en Docker
 MQTT_PORT = 1883
-#MQTT_TOPIC = "iot/health_data"
 
 
 
