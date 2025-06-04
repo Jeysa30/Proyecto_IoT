@@ -11,7 +11,7 @@ Este proyecto implementa un sistema de IoT para el sector de salud que recopila 
 ![](IMG/Diagrama.png)
 
 ### Diagrama de la base de datos
-![](IMG/Diagrama2.jpg)
+![](IMG/Diagrama2.png)
 
 ### Componentes del sistema
 1. ### Sensores:
