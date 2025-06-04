@@ -1,9 +1,10 @@
 CREATE TABLE IF NOT EXISTS sensor_data (
-    id SERIAL PRIMARY KEY,
-    temperature FLOAT,
-    systolic INT,
-    diastolic INT,
-    heart_rate INT,
+    log_id SERIAL PRIMARY KEY,
+    sensor_id INT,
+    sensor_type VARCHAR(100),
+    value_sensor FLOAT,
     timestamp TIMESTAMP,
     received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+

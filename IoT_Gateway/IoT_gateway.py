@@ -14,16 +14,16 @@ import datetime
 
 class TemperatureSensorServicer(sensor_pb2_grpc.TemperatureSensorServicer):
     def SendTemperature(self, request, context):
-        #print(f"[gRPC] Recibido: Sensor {request.sensor_id}, Temp: {request.temperature}°C")
-        print(f"[gRPC] Received from {request.sensor_id}: {request.temperature}°C at {request.timestamp}", flush=True)
-        sensor_data["temperature"].append(request.temperature)
+        print(f"[gRPC] Temperatura recibida de {request.sensor_id}: {request.temperature}°C a las {request.timestamp}", flush=True)
+        #ensor_data["temperature"].append(request.temperature)
+        publish_to_mqtt("temperature", request.sensor_id, request.temperature, request.timestamp, "iot/health_data/sensor_1")
         return sensor_pb2.Acknowledgement(message="Temperatura recibida correctamente.")
 
 def serve_grpc():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     sensor_pb2_grpc.add_TemperatureSensorServicer_to_server(TemperatureSensorServicer(), server)
     server.add_insecure_port('[::]:50051')
-    print("Servidor gRPC en puerto 50051...")
+    print("[gRPC] Servidor iniciado en puerto 50051")
     server.start()
     server.wait_for_termination()
 
@@ -36,17 +36,15 @@ rest_app = Flask(__name__)
 
 def handle_blood_pressure():
     data = request.json
-    print(f"[REST] Received blood pressure data: {data}", flush=True)
-    sensor_data["blood_pressure"].append(data)
-    return jsonify({"status": "success", "message": "Blood pressure data received"})
+    print(f"[REST] Presion arterial recibida: {data}", flush=True)
+    #sensor_data["blood_pressure"].append(data)
+    publish_to_mqtt("blood_pressure", data['sensor_id'], data['blood_pressure'], data['timestamp'], "iot/health_data/sensor_2")
+    return jsonify({"status": "success", "message": "Presion arterial recibida correctamente"})
 
-
-@rest_app.route('/health', methods=['GET'])
-def health_check():
-    return jsonify({"status": "healthy"})
 
 def serve_rest():
     rest_app.run(host='0.0.0.0', port=5000)
+    print("[REST] Servidor iniciado en puerto 5000")
 
 ### WEBSOCKET ###
 
@@ -54,8 +52,8 @@ def serve_rest():
 async def websocket_server(websocket, path):
     async for message in websocket:
         data = json.loads(message)
-        print(f"[WebSocket] Recibido: Sensor {data['sensor']}, BPM: {data['value']}", flush=True)
-        sensor_data["heart_rate"].append(data['value'])
+        print(f"[WebSocket] Frecuencia cardianca recibida de: Sensor {data['sensor_id']}, BPM: {data['value']}", flush=True)
+        publish_to_mqtt("heart_rate", data['sensor_id'], data['value'], data['timestamp'], "iot/health_data/sensor_3")
 
 def serve_websocket():
     async def start_server():
@@ -69,62 +67,43 @@ def serve_websocket():
 # --- Configuración MQTT ---
 MQTT_BROKER = "mosquitto"  # Nombre del servicio en Docker
 MQTT_PORT = 1883
-MQTT_TOPIC = "iot/health_data"
+#MQTT_TOPIC = "iot/health_data"
 
-# Almacenamiento de datos (ejemplo)
-sensor_data = {
-    "temperature": [],
-    "blood_pressure": [],
-    "heart_rate": []
-}
 
 
 # --- Cliente MQTT ---
 mqtt_client = mqtt.Client()
 mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 180)
 
-# MQTT - Publicador de datos agrupados
-def publish_to_mqtt():
-    """Publica datos agrupados a MQTT periódicamente"""
-    while True:
-        threading.Event().wait(15)
+### --- MQTT: Publicar --- ###
+def publish_to_mqtt(sensor_type, sensor_id, data, timestamp, topic):
+    message = {
+        "sensor_type": sensor_type,
+        "sensor_id": sensor_id,
+        "data": data,
+        "timestamp": timestamp
+    }
 
-        if not (sensor_data["temperature"] or sensor_data["blood_pressure"] or sensor_data["blood_pressure"]):
-            continue  # No hay datos que publicar aún
+    message_json = json.dumps(message)
+    print(f"[MQTT] Publicando mensaje a tópico '{topic}': {message_json}")
 
-        avg_temp = (
-            sum(sensor_data["temperature"]) / len(sensor_data["temperature"])
-            if sensor_data["temperature"] else 0
+    try:
+        mqtt_client.publish(
+            topic=topic,
+            payload=message_json
         )
-        last_bp = (
-            sensor_data["blood_pressure"][-1]
-            if sensor_data["blood_pressure"] else {"systolic": None, "diastolic": None, "heart_rate": None}
-        )
+        print("[MQTT] Mensaje publicado correctamente")
 
-        payload = {
-            "avg_temperature": round(avg_temp, 2),
-            "last_blood_pressure": {
-                "systolic": last_bp.get("systolic"),
-                "diastolic": last_bp.get("diastolic"),
-                "heart_rate": last_bp.get("heart_rate")
-            },
-            "timestamp": datetime.datetime.now().isoformat()
-        }
+    except Exception as e:
+        print(f"[ERROR] Falló publicación MQTT: {e}", flush=True)
 
-        mqtt_client.publish(MQTT_TOPIC, json.dumps(payload))
-        print(f"[MQTT] Publishedd: {payload}", flush=True)
 
-        # Limpiar datos acumulados después de publicar
-        sensor_data["temperature"].clear()
-        sensor_data["blood_pressure"].clear()
-        sensor_data["heart_rate"].clear()
 
 
 
 if __name__ == '__main__':
     # Iniciar servidores en hilos separados
     import threading
-    threading.Thread(target=publish_to_mqtt, daemon=True).start()
     
     grpc_thread = threading.Thread(target=serve_grpc, daemon=True)
     rest_thread = threading.Thread(target=serve_rest, daemon=True)

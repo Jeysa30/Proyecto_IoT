@@ -3,24 +3,21 @@ import time
 import requests
 from flask import Flask, jsonify
 import threading
+import datetime 
 
 # Configuración del sensor
-SENSOR_ID = "bp-sensor-001"
-GATEWAY_URL = "http://iot-gateway:5000"  # Asumimos que el gateway tendrá un endpoint REST
+SENSOR_ID = "2"
+GATEWAY_URL = "http://iot-gateway:5000"  # conexion con el endpoint rest del gateway
 LOCAL_PORT = 8080  # Puerto para la API local del sensor
 
-app = Flask(__name__)
 
 def generate_blood_pressure():
     """Genera datos simulados de presión arterial"""
-    systolic = random.randint(90, 180)  # Presión sistólica (mmHg)
-    diastolic = random.randint(60, 120)  # Presión diastólica (mmHg)
-    heart_rate = random.randint(60, 100)  # Frecuencia cardíaca (bpm)
+    blood_pressure = random.randint(60, 100)  # presion arterial
     return {
-        "systolic": systolic,
-        "diastolic": diastolic,
-        "heart_rate": heart_rate,
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        "sensor_id": SENSOR_ID,
+        "blood_pressure": blood_pressure,
+        "timestamp": datetime.datetime.now().isoformat()
     }
 
 def send_to_gateway():
@@ -29,24 +26,15 @@ def send_to_gateway():
         try:
             data = generate_blood_pressure()
             response = requests.post(f"{GATEWAY_URL}/blood-pressure", json=data)
-            print(f"Datos enviados al gateway. Respuesta: {response.status_code}", flush=True)
+            print(f"[Sensor2] Enviado a gateway. Respuesta: {response.status_code}", flush=True)
         except Exception as e:
-            print(f"Error al enviar datos al gateway: {e}")
+            print(f"[Sensor2] Error al enviar datos al gateway: {e}")
 
         
-        time.sleep(10)  # Enviar cada 30 segundos
+        time.sleep(10)  # Enviar cada 10 segundos
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    return jsonify({"status": "healthy"})
-
-@app.route('/data', methods=['GET'])
-def get_current_data():
-    return jsonify(generate_blood_pressure())
 
 if __name__ == '__main__':
     # Iniciar el hilo para enviar datos al gateway
     threading.Thread(target=send_to_gateway, daemon=True).start()
     
-    # Iniciar el servidor Flask
-    app.run(host='0.0.0.0', port=LOCAL_PORT)

@@ -4,7 +4,7 @@ import json
 import os
 
 # Configuración
-MQTT_TOPIC = "iot/health_data"
+MQTT_TOPIC = "iot/health_data/sensor_1"
 
 BROKER = os.getenv("MQTT_BROKER")
 
@@ -15,8 +15,10 @@ POSTGRES_CONFIG = {
     "password": "iot_password"
 }
 
+
+
 def on_message(client, userdata, msg):
-    print(f"Mensaje recibido bruto: {msg.payload}", flush=True)  # Nuevo log
+    print(f"[Subscriber] Mensaje recibido bruto: {msg.payload}", flush=True)  # Nuevo log
 
     try:
         data = json.loads(msg.payload.decode())
@@ -25,27 +27,26 @@ def on_message(client, userdata, msg):
 
         conn = psycopg2.connect(**POSTGRES_CONFIG)
         cursor = conn.cursor()
-        print(f"Decodificado: {data}", flush=True)
+        print(f"[Subscriber] Decodificado: {data}", flush=True)
         
-        temperature = data.get("avg_temperature"),
-        systolic = data.get("last_blood_pressure", {}).get("systolic"),
-        diastolic = data.get("last_blood_pressure", {}).get("diastolic"),                    
-        heart_rate = data.get("last_blood_pressure", {}).get("heart_rate"),
-        timestamp = data.get("timestamp")
-        # Insertar datos (ajusta según tu esquema)
+        valor = None 
+            
+        valor = data.get('data')
+        id_sensor = data.get('sensor_id')
+        timestamp = data.get('timestamp')
+        sensor_type = data.get('sensor_type')
+
         cursor.execute("""
             INSERT INTO sensor_data (
-                temperature, 
-                systolic, 
-                diastolic, 
-                heart_rate, 
+                sensor_id, 
+                sensor_type,
+                value_sensor, 
                 timestamp
-            ) VALUES (%s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s)
             """, (
-                temperature, 
-                systolic, 
-                diastolic, 
-                heart_rate, 
+                id_sensor,
+                sensor_type,
+                valor, 
                 timestamp
                 )
         )
@@ -54,12 +55,13 @@ def on_message(client, userdata, msg):
         cursor.close()
         conn.close()
 
-        print(f"[DB] Insertado en PostgreSQL {temperature}", flush=True)
+        print(f"[DB] Insertado en PostgreSQL {valor}", flush=True)
 
 
         
     except Exception as e:
         print(f"Error: {e}", flush=True)
+
 
 
 # Configuración MQTT
@@ -69,5 +71,5 @@ print(f"[MQTT] Conectando a broker {BROKER}...", flush=True)
 
 client.connect(os.getenv("MQTT_BROKER"), 1883, 180)
 client.subscribe(MQTT_TOPIC)
-print("[MQTT] Suscrito a 'sensor/data'", flush=True)
+print("[MQTT] Suscrito a 'sensor1'", flush=True)
 client.loop_forever()
