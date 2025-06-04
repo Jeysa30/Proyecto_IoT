@@ -16,7 +16,6 @@ POSTGRES_CONFIG = {
 }
 
 
-
 def on_message(client, userdata, msg):
     print(f"[Subscriber] Mensaje recibido bruto: {msg.payload}", flush=True)  # Nuevo log
 
@@ -71,5 +70,5 @@ print(f"[MQTT] Conectando a broker {BROKER}...", flush=True)
 
 client.connect(os.getenv("MQTT_BROKER"), 1883, 180)
 client.subscribe(MQTT_TOPIC)
-print("[MQTT] Suscrito a 'sensor1'", flush=True)
+print("[MQTT] Suscrito a 'sensor2'", flush=True)
 client.loop_forever()
